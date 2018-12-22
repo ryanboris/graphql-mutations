@@ -1,5 +1,81 @@
 import uuidv4 from 'uuid/v4'
-import { users, posts, comments } from './dummydata'
+
+/**
+ * Dummy Data*
+ * @var {object} users
+ * @var {object} posts
+ * @var {object} comments
+ * @export {object} resolvers
+ */
+
+let users = [
+    {
+        id: '1',
+        name: 'Ryan',
+        email: 'ryan@example.com'
+    },
+    {
+        id: '2',
+        name: 'Shiela',
+        email: 'shiela@example.com'
+    },
+    {
+        id: '3',
+        name: 'Tootie',
+        email: 'tootie@example.com'
+    }
+]
+
+let posts = [
+    {
+        id: '11',
+        title: 'a post',
+        body: 'a body',
+        published: true,
+        author: '2'
+    },
+    {
+        id: '12',
+        title: 'a post',
+        body: 'more',
+        published: false,
+        author: '2'
+    },
+    {
+        id: '13',
+        title: 'a post',
+        body: 'another',
+        published: true,
+        author: '3'
+    }
+]
+
+let comments = [
+    {
+        id: '28',
+        text: 'asdfe3',
+        post: '11',
+        author: '1'
+    },
+    {
+        id: '29',
+        text: 'dfgdfgdfgdfg',
+        post: '12',
+        author: '3'
+    },
+    {
+        id: '30',
+        text: 'lorem ipsummmm',
+        post: '12',
+        author: '3'
+    },
+    {
+        id: '31',
+        text: 'aads3addsfasfe33333333333',
+        post: '12',
+        author: '2'
+    }
+]
 
 export const resolvers = {
     Query: {
@@ -78,6 +154,30 @@ export const resolvers = {
 
             users.push(user)
             return user
+        },
+
+        deleteUser(parent, args, ctx, info) {
+            const userIndex = users.findIndex(user => user.id === args.id)
+            if (userIndex === -1) {
+                throw new Error('User not found.')
+            }
+
+            const deletedUsers = users.splice(userIndex, 1)
+
+            posts = posts.filter(post => {
+                const match = post.author === args.id
+
+                if (match) {
+                    comments = comments.filter(
+                        comment => comment.post !== post.id
+                    )
+                }
+                return !match
+            })
+
+            comments = comments.filter(comment => comment.author !== args.id)
+
+            return deletedUsers[0]
         },
 
         createPost(parent, args, ctx, info) {

@@ -255,8 +255,6 @@ export const resolvers = {
 
             const deletedComments = comments.splice(commentIndex, 1)
 
-            comments = comments.filter(comment => comment.id !== args.id)
-
             return deletedComments[0]
         }
     },

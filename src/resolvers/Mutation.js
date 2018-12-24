@@ -1,5 +1,6 @@
 import uuidv4 from 'uuid/v4'
 import { NoUnusedFragmentsRule } from 'graphql'
+import { cpus } from 'os'
 
 const Mutation = {
     createUser(parent, args, { db }, info) {
@@ -180,11 +181,16 @@ const Mutation = {
         }
 
         db.comments.push(comment)
-        pubsub.publish(`comment ${args.data.post}`, { comment })
+        pubsub.publish(`comment ${args.data.post}`, {
+            comment: {
+                mutation: 'CREATED',
+                data: comment
+            }
+        })
         return comment
     },
 
-    deleteComment(parent, args, { db }, info) {
+    deleteComment(parent, args, { db, pubsub }, info) {
         const commentIndex = db.comments.findIndex(
             comment => comment.id === args.id
         )
@@ -193,12 +199,19 @@ const Mutation = {
             throw new Error('Comment not found.')
         }
 
-        const deletedComments = db.comments.splice(commentIndex, 1)
+        const [deletedComment] = db.comments.splice(commentIndex, 1)
 
-        return deletedComments[0]
+        pubsub.publish(`comment ${deletedComment.post}`, {
+            comment: {
+                mutation: 'DELETED',
+                data: deletedComment
+            }
+        })
+
+        return deletedComment
     },
 
-    updateComment(parent, { id, data }, { db }, info) {
+    updateComment(parent, { id, data }, { db, pubsub }, info) {
         const comment = db.comments.find(comment => comment.id === id)
 
         if (!comment) {
@@ -207,6 +220,12 @@ const Mutation = {
 
         if (typeof data.text === 'string') {
             comment.text = data.text
+            pubsub.publish(`comment ${comment.post}`, {
+                comment: {
+                    mutation: 'UPDATED',
+                    data: comment
+                }
+            })
         }
 
         return comment
